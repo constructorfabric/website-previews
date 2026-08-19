@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<base href="/website-previews/pr-20/"/>
+<meta charset="utf-8"/>
+<title>Try — Constructor Fabric</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="description" content="Try Constructor Fabric hands-on — a browser IDE with Constructor Studio pre-installed and a guided trainer that takes you from a product brief to a running, tested app."/>
+<link rel="canonical" href="https://constructorfabric.org/try.html"/>
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg"/>
+<link rel="preconnect" href="https://unpkg.com" crossorigin/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://constructorfabric.org/try.html"/>
+<meta property="og:title" content="Try — Constructor Fabric"/>
+<meta property="og:description" content="Try Constructor Fabric hands-on — a browser IDE with Constructor Studio pre-installed and a guided trainer that takes you from a product brief to a running, tested app."/>
+<meta property="og:image" content="https://constructorfabric.org/assets/img/og-image.svg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Try — Constructor Fabric"/>
+<meta name="twitter:description" content="Try Constructor Fabric hands-on — a browser IDE with Constructor Studio pre-installed and a guided trainer that takes you from a product brief to a running, tested app."/>
+<meta name="twitter:image" content="https://constructorfabric.org/assets/img/og-image.svg"/>
+<link rel="stylesheet" href="styles.css"/>
+<script defer src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script defer src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script defer src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  .trial-form label { display:block; font-size:14px; font-weight:600; color:var(--text); margin-bottom:6px; }
+  .trial-form input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-size:16px; font-family:var(--font-sans); outline:none; transition:border-color .15s; }
+  .trial-form input:focus { border-color:var(--blue-bright); box-shadow:0 0 0 3px rgba(0,101,227,.12); }
+  .trial-status { display:none; margin-top:16px; padding:14px 16px; border-radius:var(--radius-md); background:var(--blue-tint); color:var(--navy); font-size:15px; line-height:1.55; }
+  .trial-status.is-error { background:#FEE2E2; color:#991B1B; }
+  .trial-preview { background:#fff; border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); overflow:hidden; }
+  .trial-preview__bar { display:flex; align-items:center; padding:10px 16px; border-bottom:1px solid var(--line-soft); background:var(--bg-soft); }
+  .trial-preview__bar span { font-size:13px; font-weight:600; color:var(--navy); }
+  .trial-preview__body { padding:24px; }
+  .trial-preview h3 { font-size:17px; font-weight:600; margin-bottom:10px; color:var(--navy); }
+  .trial-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0; }
+  .trial-list li { display:flex; gap:10px; align-items:flex-start; padding:10px 0; font-size:14px; color:var(--text-2); line-height:1.5; border-bottom:1px solid var(--line-soft); }
+  .trial-list li:last-child { border-bottom:none; }
+  .trial-list li::before { content:""; flex:0 0 auto; margin-top:5px; width:6px; height:6px; border-radius:999px; background:var(--blue-bright); }
+  .mini-grid { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media(min-width:600px) { .mini-grid { grid-template-columns:repeat(2,1fr); } }
+  .hero-screenshot { border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-frame); margin-top:32px; }
+  .hero-screenshot img { width:100%; height:auto; display:block; }
+  .trial-inline { margin-top:28px; max-width:520px; }
+  .trial-form--inline { display:flex; gap:12px; flex-wrap:wrap; align-items:stretch; }
+  .trial-form--inline input { flex:1 1 240px; min-width:0; }
+  .trial-form--inline button { flex:0 0 auto; white-space:nowrap; }
+  .trial-inline__note { margin:10px 0 0; font-size:13px; color:var(--text-2); }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+</style>
+</head>
+<body data-screen-label="Try">
+  <div id="root"></div>
+  <script type="text/babel" src="partials.jsx"></script>
+  <script type="text/babel">
+    const { Fragment, useState, useId } = React;
+
+    const TRIAL_APP_ID = 'constructor-fabric';
+    const TRIAL_JPS = 'https://raw.githubusercontent.com/jelastic-jps/constructor-fabric/main/manifest.jps';
+    const PLATFORM_URL = 'https://app.vhc.virtuozzo.com';
+    const TRIAL_GROUP = 'constructor_fabric';
+
+    function registrationUrl() {
+      const platform = new URL(PLATFORM_URL);
+      const regHost = platform.hostname.replace(/^app\./, 'reg.');
+      return `${platform.protocol}//${regHost}/installapp`;
+    }
+
+    function buildTrialUrl(email) {
+      const target = new URL(registrationUrl());
+      target.searchParams.set('email', email.trim());
+      target.searchParams.set('id', TRIAL_APP_ID);
+      target.searchParams.set('jps', TRIAL_JPS);
+      target.searchParams.set('group', TRIAL_GROUP);
+      target.searchParams.set('iref', window.location.href);
+      target.searchParams.set('eref', document.referrer || '');
+      return target;
+    }
+
+    function TrialForm() {
+      const [email, setEmail] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [status, setStatus] = useState(null);
+      const [sent, setSent] = useState(false);
+      const inputId = useId();
+
+      async function submit(e) {
+        e.preventDefault();
+        const value = email.trim();
+        if (!/.+@.+\..+/.test(value)) {
+          setStatus({ type: 'error', text: 'Enter a valid email address to deploy.' });
+          return;
+        }
+        setLoading(true);
+        setSent(false);
+        setStatus({ type: 'ok', text: 'Deployment request sent for ' + value + '...' });
+        try {
+          const response = await fetch(buildTrialUrl(value).toString(), { method: 'GET', mode: 'cors', credentials: 'omit' });
+          const text = await response.text();
+          let payload = null;
+          try { payload = JSON.parse(text); } catch (_) {}
+          const ok = payload && payload.result === 0 && payload.response && payload.response.result === 0;
+          if (!ok) {
+            const message = payload && payload.response && payload.response.error ? payload.response.error : text.slice(0, 240);
+            throw new Error(message || 'Trial request failed.');
+          }
+          setStatus({ type: 'ok', text: 'Request accepted — check your mailbox for the confirmation link from Virtuozzo Cloud. After confirming, you will choose an AI coding agent and set a password for your environment, and your 14-day trial begins. You sign in to the agent with your own Claude, ChatGPT, or GitHub account once the IDE opens.' });
+          setSent(true);
+        } catch (err) {
+          setStatus({ type: 'error', text: 'Trial request failed: ' + (err && err.message ? err.message : err) });
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      const statusBox = status && (
+        <div className={'trial-status' + (status.type === 'error' ? ' is-error' : '')} style={{display:'block'}} role="status" aria-live="polite">
+          {status.text}
+        </div>
+      );
+
+      return (
+        <div className="trial-inline">
+          <form className="trial-form trial-form--inline" onSubmit={submit}>
+            <label className="sr-only" htmlFor={inputId}>Email address</label>
+            <input id={inputId} type="email" placeholder="Your email address" value={email} onChange={e => { setEmail(e.target.value); if (sent) { setSent(false); setStatus(null); } }} required />
+            <button className="btn btn-primary btn-lg" type="submit" disabled={loading || sent}>
+              {loading ? 'Deploying…' : sent ? 'Email sent' : 'Start your trial'}
+            </button>
+          </form>
+          <p className="trial-inline__note">14-day trial · no payment · no API key</p>
+          {statusBox}
+        </div>
+      );
+    }
+
+    function TrialPreview() {
+      return (
+        <div className="trial-preview">
+          <div className="trial-preview__bar">
+            <span>Hands-on Cloud Development Environment</span>
+          </div>
+          <div className="trial-preview__body">
+            <ul className="trial-list">
+              <li>A Code Server IDE accessible directly in your browser.</li>
+              <li>Constructor Studio pre-installed, with a 12-step guided trainer.</li>
+              <li>Your choice of AI coding agent: Claude Code, Codex, or GitHub Copilot.</li>
+              <li>Build a real app end to end — PRD, design, features, code, tests.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    function TryPage() {
+      return (
+        <Fragment>
+          <SiteHeader active="try"/>
+
+          {/* HERO */}
+          <section className="page-hero">
+            <div className="hero-bg"/>
+            <div className="container" style={{position:'relative'}}>
+              <div className="page-hero__inner">
+                <div>
+                  <div className="eyebrow">Hands-on trial</div>
+                  <h1 className="page-hero__title">Try Constructor Fabric</h1>
+                  <p className="page-hero__lead">
+                    Get instant access to a browser IDE with Constructor Studio pre-installed and a guided trainer that takes you from a product brief to a running, tested application.
+                  </p>
+
+                  <TrialForm/>
+
+                  <div className="hero-screenshot">
+                    <img src="assets/img/trainer-screenshot.webp" width="1200" height="592" alt="The Constructor Studio trainer in a browser IDE: step 6 of 12 with a passing validation check, and the AI agent panel offering the next workflow"/>
+                  </div>
+                </div>
+                <TrialPreview/>
+              </div>
+            </div>
+          </section>
+
+          {/* TRIAL FORM + DETAILS */}
+          <section className="section section--white">
+            <div className="container">
+              <div>
+                <div style={{maxWidth:780}}>
+                  <div className="eyebrow">What you get</div>
+                  <h2 style={{marginTop:0}}>A hands-on Constructor Fabric environment.</h2>
+                  <p className="lead" style={{marginTop:12}}>
+                    This page is for people who want to try the product hands-on. You get a browser IDE with Constructor Studio already installed and configured, your chosen AI coding agent, and a trainer that walks you through building a small application the way Constructor Studio does it.
+                  </p>
+                  <div style={{marginTop:32}}>
+                    <div className="mini-grid">
+                      <div className="card">
+                        <h3>Code Server IDE</h3>
+                        <p>A full VS Code environment in your browser — no local setup required.</p>
+                      </div>
+                      <div className="card">
+                        <h3>Guided Development Flow</h3>
+                        <p>Twelve steps from a product brief to a running app: PRD, design, an architecture decision, feature specs, code and tests — each one validated before you move on.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{marginTop:28}}>
+                    <h3 style={{fontSize:18,marginBottom:16}}>What you need before you start</h3>
+                    <div className="mini-grid">
+                      <div className="card">
+                        <h3>1. An account with your AI coding agent</h3>
+                        <p>You sign in to the agent inside the IDE with your own account — Claude (Anthropic), ChatGPT (OpenAI), or GitHub for Copilot. No API key is needed, and none is asked for.</p>
+                      </div>
+                      <div className="card">
+                        <h3>2. A password you choose</h3>
+                        <p>The sign-up form asks you to pick a password for your environment and to choose your coding agent. The password is stored only as a hash — it cannot be shown or recovered later, so keep it safe.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* START YOUR JOURNEY */}
+          <section className="section section--tint" id="start">
+            <div className="container">
+              <div style={{maxWidth:780}}>
+                <div className="eyebrow">Start your journey here</div>
+                <h2 style={{marginTop:0}}>Deploy your environment</h2>
+                <p className="lead" style={{marginTop:12}}>
+                  Enter your email and we'll send you a confirmation link. You'll then choose your AI coding agent and a password, and your environment builds itself.
+                </p>
+              </div>
+              <div style={{marginTop:28, maxWidth:520}}>
+                <TrialForm/>
+              </div>
+            </div>
+          </section>
+
+          {/* AFTER CONFIRMATION */}
+          <section className="section section--soft">
+            <div className="container">
+              <div style={{maxWidth:780}}>
+                <div className="eyebrow">After confirmation</div>
+                <h2 style={{marginTop:0}}>Open the IDE, sign in to your agent, and follow the trainer</h2>
+                <p className="lead" style={{marginTop:14}}>
+                  The trainer opens by itself and guides you through a complete cycle: a product brief becomes a PRD, a design, an architecture decision, feature specifications, then working code and tests — with every requirement traceable into the code that implements it. Each step is checked before the next unlocks, so you always know where you stand.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <CtaStart/>
+
+          <SiteFooter/>
+        </Fragment>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<TryPage/>);
+  </script>
+</body>
+</html>
